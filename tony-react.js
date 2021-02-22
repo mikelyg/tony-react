@@ -66,8 +66,20 @@ export class Component {
   }
 
   reRender() {
-    this._range.deleteContents();
-    this[RENDER_TO_DOM](this._range)
+    // 全空的rang会被下一个range合并
+
+    // this._range.deleteContents();
+    // this[RENDER_TO_DOM](this._range);
+
+    let oldRange = this._range;
+
+    let range = document.createRange();
+    range.setStart(oldRange.startContainer, oldRange.startOffset);
+    range.setEnd(oldRange.startContainer, oldRange.startOffset)
+    this[RENDER_TO_DOM](range);
+
+    oldRange.setStart(range.endContainer, range.endOffset);
+    oldRange.deleteContents();
   }
 
   setState(newState){
@@ -87,7 +99,6 @@ export class Component {
     }
     merge(this.state, newState)
     this.reRender();
-
   }
 }
 
@@ -109,6 +120,7 @@ export function tonyCreateElement(type, attributes, ...children) {
       if(typeof child === 'string'){
         child = new TextWraper(child);
       }
+      if(child === null) continue;
       if((typeof(child) === 'object') && (child instanceof Array)){
         insertChildren(child);
       }else{
