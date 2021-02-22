@@ -14,9 +14,7 @@ class MyComponent extends Component{
       <span>{ this.state.a.toString() }</span>
       <span>{ this.state.b.toString() }</span>
       <button onClick={() => {
-        this.state.a++;
-        this.state.b++;
-        this.reRender();
+        this.setState({"a":this.state.a+1})
       }}>add</button>
       {this.children}
     </div>  
