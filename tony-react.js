@@ -1,28 +1,34 @@
+import { range } from "lodash";
+
 const RENDER_TO_DOM = Symbol('render to dom')
 
 class ElementWrapper {
   constructor(type) {
-    this.root = document.createElement(type);
+    this._root = document.createElement(type);
   }
 
   setAttribute(name, value) {
-    if(name === 'className') {
-      this.root.setAttribute('class', value);
+    if(name.match(/^on([\s\S]*)/)){
+      this._root.addEventListener(RegExp.$1.replace(/^[\s\S]/, c => c.toLowerCase()), value);
     }else{
-      this.root.setAttribute(name, value);
+      if(name === 'className') {
+        this._root.setAttribute('class', value);
+      }else{
+        this._root.setAttribute(name, value);
+      }
     }
   }
 
   appendChild(component) {
     let range = document.createRange();
-    range.setStart(this.root, this.root.childNodes.length);
-    range.setEnd(this.root, this.root.childNodes.length);
+    range.setStart(this._root, this._root.childNodes.length);
+    range.setEnd(this._root, this._root.childNodes.length);
     component[RENDER_TO_DOM](range);
   }
 
   [RENDER_TO_DOM](range) {
     range.deleteContents();
-    range.insertNode(this.root);
+    range.insertNode(this._root);
   }
 }
 
@@ -43,6 +49,7 @@ export class Component {
     this.props = Object.create(null);
     this.children = [];
     this._root = null;
+    this._range = null;
   }
 
   setAttribute(name, value){
@@ -54,7 +61,13 @@ export class Component {
   }
 
   [RENDER_TO_DOM](range) {
-    this.render()[RENDER_TO_DOM](range);
+    this._range = range;
+    this.render()[RENDER_TO_DOM](this._range);
+  }
+
+  reRender() {
+    this._range.deleteContents();
+    this[RENDER_TO_DOM](this._range)
   }
 }
 

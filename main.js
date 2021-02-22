@@ -12,6 +12,12 @@ class MyComponent extends Component{
     return <div>
       <h1>My Component</h1>
       <span>{ this.state.a.toString() }</span>
+      <span>{ this.state.b.toString() }</span>
+      <button onClick={() => {
+        this.state.a++;
+        this.state.b++;
+        this.reRender();
+      }}>add</button>
       {this.children}
     </div>  
   }
