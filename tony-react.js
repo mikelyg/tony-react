@@ -2,47 +2,6 @@ import { range } from "lodash";
 
 const RENDER_TO_DOM = Symbol('render to dom')
 
-class ElementWrapper {
-  constructor(type) {
-    this._root = document.createElement(type);
-  }
-
-  setAttribute(name, value) {
-    if(name.match(/^on([\s\S]*)/)){
-      this._root.addEventListener(RegExp.$1.replace(/^[\s\S]/, c => c.toLowerCase()), value);
-    }else{
-      if(name === 'className') {
-        this._root.setAttribute('class', value);
-      }else{
-        this._root.setAttribute(name, value);
-      }
-    }
-  }
-
-  appendChild(component) {
-    let range = document.createRange();
-    range.setStart(this._root, this._root.childNodes.length);
-    range.setEnd(this._root, this._root.childNodes.length);
-    component[RENDER_TO_DOM](range);
-  }
-
-  [RENDER_TO_DOM](range) {
-    range.deleteContents();
-    range.insertNode(this._root);
-  }
-}
-
-class TextWraper {
-  constructor(content){
-    this.root = document.createTextNode(content);
-  }
-
-  [RENDER_TO_DOM](range) {
-    range.deleteContents();
-    range.insertNode(this.root);
-  }
-}
-
 // 组件相关
 export class Component {
   constructor(){
@@ -58,6 +17,10 @@ export class Component {
 
   appendChild(component) {
     this.children.push(component);
+  }
+
+  get vDom(){
+    return this.render().vDom;
   }
 
   [RENDER_TO_DOM](range) {
@@ -102,6 +65,68 @@ export class Component {
   }
 }
 
+class ElementWrapper extends Component{
+  constructor(type) {
+    super(type)
+    this.type =  type;
+    this._root = document.createElement(type);
+  }
+
+  // setAttribute(name, value) {
+  //   if(name.match(/^on([\s\S]*)/)){
+  //     this._root.addEventListener(RegExp.$1.replace(/^[\s\S]/, c => c.toLowerCase()), value);
+  //   }else{
+  //     if(name === 'className') {
+  //       this._root.setAttribute('class', value);
+  //     }else{
+  //       this._root.setAttribute(name, value);
+  //     }
+  //   }
+  // }
+
+  // appendChild(component) {
+  //   let range = document.createRange();
+  //   range.setStart(this._root, this._root.childNodes.length);
+  //   range.setEnd(this._root, this._root.childNodes.length);
+  //   component[RENDER_TO_DOM](range);
+  // }
+
+  get vDom() {
+    return {
+      type: this.type,
+      props: this.props,
+      children: this.children.map( child => child.vDom)
+    }
+  }
+
+  [RENDER_TO_DOM](range) {
+    range.deleteContents();
+    range.insertNode(this._root);
+  }
+}
+
+class TextWraper  extends Component{
+  constructor(content){
+    super(content);
+    this.content = content;
+    this.root = document.createTextNode(content);
+  }
+
+  get vDom() {
+    return {
+      type: "#text",
+      content: this.content
+    }
+  }
+
+  [RENDER_TO_DOM](range) {
+    range.deleteContents();
+    range.insertNode(this.root);
+  }
+}
+
+
+
 // 创建元素
 export function tonyCreateElement(type, attributes, ...children) {
   let e;
@@ -133,7 +158,6 @@ export function tonyCreateElement(type, attributes, ...children) {
 
   return e;
 }
-
 
 // 渲染
 export function render(component, parentElement) {
